@@ -1,0 +1,6 @@
+# Type definitions for `powo_ruby`
+
+module PowoRuby
+  VERSION: String
+end
+

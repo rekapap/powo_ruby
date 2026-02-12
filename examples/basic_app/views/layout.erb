@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>powo_ruby example</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container">
+        <div class="brand">
+          <a href="/" class="brand__link">powo_ruby</a>
+          <span class="brand__sub">example app</span>
+        </div>
+        <nav class="nav">
+          <a href="/" class="nav__link">Home</a>
+          <a href="/search?q=Acacia" class="nav__link">Try a search</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <%= yield %>
+    </main>
+
+    <footer class="footer container">
+      <small>
+        Unofficial client for POWO. Data and service provided by Royal Botanic Gardens, Kew.
+      </small>
+    </footer>
+  </body>
+</html>
+

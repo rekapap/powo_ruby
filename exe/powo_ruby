@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require "powo_ruby"
+
+def parse_kv_pairs(pairs)
+  pairs.each_with_object({}) do |pair, out|
+    key, value = pair.split("=", 2)
+    raise ArgumentError, "Invalid filter '#{pair}' (expected key=value)" if key.to_s.empty?
+
+    out[key.to_sym] =
+      case value
+      when "true" then true
+      when "false" then false
+      when /\A\d+\z/ then Integer(value)
+      else
+        value
+      end
+  end
+end
+
+options = {
+  base_url: PowoRuby.config.base_url,
+  timeout: PowoRuby.config.timeout,
+  open_timeout: PowoRuby.config.open_timeout,
+  retries: PowoRuby.config.retries,
+  pretty: true,
+  cursor: "*",
+  per_page: 24
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = <<~BANNER
+    Usage: powo_ruby [options] <command> [args]
+
+    Commands:
+      search <query>
+      lookup <id>
+      ipni-search <query>
+  BANNER
+
+  opts.on("--base-url URL", "API base URL (default: #{options[:base_url]})") { |v| options[:base_url] = v }
+  opts.on("--timeout SECONDS", Integer, "Request timeout (default: #{options[:timeout]})") { |v| options[:timeout] = v }
+  opts.on("--open-timeout SECONDS", Integer, "Open timeout (default: #{options[:open_timeout]})") do |v|
+    options[:open_timeout] = v
+  end
+  opts.on("--no-retries", "Disable retry/backoff") { options[:retries] = false }
+  opts.on("--[no-]pretty", "Pretty-print JSON output (default: true)") { |v| options[:pretty] = v }
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit 0
+  end
+end
+
+parser.order!
+
+command = ARGV.shift
+raise ArgumentError, "Command is required. Use --help." if command.to_s.empty?
+
+client = PowoRuby::Client.new(
+  base_url: options[:base_url],
+  timeout: options[:timeout],
+  open_timeout: options[:open_timeout],
+  retries: options[:retries]
+)
+
+case command
+when "search"
+  query = ARGV.shift
+  raise ArgumentError, "search requires <query>" if query.to_s.empty?
+
+  filters = []
+  OptionParser.new do |opts|
+    opts.on("--cursor CURSOR", "Cursor for pagination (default: '*')") { |v| options[:cursor] = v }
+    opts.on("--per-page N", Integer, "Results per page (default: 24)") { |v| options[:per_page] = v }
+    opts.on("--filter KEY=VALUE", "Repeatable filter (e.g. family=Fabaceae accepted=true)") { |v| filters << v }
+  end.parse!(ARGV)
+
+  response =
+    client.search.query(
+      query: query,
+      filters: parse_kv_pairs(filters),
+      cursor: options[:cursor],
+      per_page: options[:per_page]
+    )
+  output = { total: response.total_count, results: response.results }
+when "lookup"
+  id = ARGV.shift
+  raise ArgumentError, "lookup requires <id>" if id.to_s.empty?
+
+  response = client.taxa.lookup(id)
+  output = response.raw
+when "ipni-search"
+  query = ARGV.shift
+  raise ArgumentError, "ipni-search requires <query>" if query.to_s.empty?
+
+  filters = []
+  OptionParser.new do |opts|
+    opts.on("--cursor CURSOR", "Cursor for pagination (default: '*')") { |v| options[:cursor] = v }
+    opts.on("--per-page N", Integer, "Results per page (default: 24)") { |v| options[:per_page] = v }
+    opts.on("--filter KEY=VALUE", "Repeatable filter (validated against IPNI term list)") { |v| filters << v }
+  end.parse!(ARGV)
+
+  ipni_client =
+    PowoRuby::Client.new(
+      mode: :ipni,
+      base_url: options[:base_url],
+      timeout: options[:timeout],
+      open_timeout: options[:open_timeout],
+      retries: options[:retries]
+    )
+
+  response =
+    ipni_client.search.query(
+      query: query,
+      filters: parse_kv_pairs(filters),
+      cursor: options[:cursor],
+      per_page: options[:per_page]
+    )
+  output = { total: response.total_count, results: response.results }
+else
+  raise ArgumentError, "Unknown command '#{command}'. Use --help."
+end
+
+json =
+  if options[:pretty]
+    JSON.pretty_generate(output)
+  else
+    JSON.dump(output)
+  end
+
+puts json
