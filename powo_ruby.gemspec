@@ -15,9 +15,8 @@ Gem::Specification.new do |spec|
 
   # Project links (these should point to YOUR project, not POWO/Kew)
   spec.homepage = "https://github.com/rekapap/powo_ruby"
-  spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/rekapap/powo_ruby"
-  spec.metadata["changelog_uri"] = "https://github.com/rekapap/powo_ruby/blob/master/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["changelog_uri"] = "https://github.com/rekapap/powo_ruby/blob/main/CHANGELOG.md"
   spec.metadata["rubygems_mfa_required"] = "true"
 
   gemspec = File.basename(__FILE__)
@@ -32,5 +31,5 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "faraday", ">= 2.0"
+  spec.add_dependency "faraday", "~> 2.0"
 end
