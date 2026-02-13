@@ -185,12 +185,13 @@ bundle exec rspec
 bundle exec rubocop
 ```
 
-## Example app
+## Examples
 
-A tiny Sinatra app (with basic views for search + taxon lookup) lives at `examples/basic_app`.
+Examples (including a tiny Sinatra app with basic views for search + taxon lookup) live in the separate repo [`rekapap/powo_ruby_examples`](https://github.com/rekapap/powo_ruby_examples).
 
 ```bash
-cd examples/basic_app
+git clone https://github.com/rekapap/powo_ruby_examples.git
+cd powo_ruby_examples/basic_app
 bundle install
 bundle exec rackup
 ```
