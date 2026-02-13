@@ -17,18 +17,21 @@ module PowoRuby
     # @param default_overrides [Hash] overrides always applied when building new instances
     # @return [Object] instance of `klass`
     def self.resolve(klass, config:, memo_key:, default_overrides: {})
-      return config if config.is_a?(klass)
-
-      return klass.new(options: PowoRuby.config.with(config).client_kwargs, **default_overrides) if config.is_a?(Hash)
-
-      return klass.new(options: config.client_kwargs, **default_overrides) if config.is_a?(Configuration)
-
-      if config.nil?
-        return Thread.current[memo_key] ||= klass.new(options: PowoRuby.config.client_kwargs,
-                                                      **default_overrides)
+      case config
+      when klass
+        config
+      when Hash
+        klass.new(options: PowoRuby.config.with(config).client_kwargs, **default_overrides)
+      when Configuration
+        klass.new(options: config.client_kwargs, **default_overrides)
+      when nil
+        Thread.current[memo_key] ||= klass.new(
+          options: PowoRuby.config.client_kwargs,
+          **default_overrides
+        )
+      else
+        raise ArgumentError, "config must be nil, a Hash, PowoRuby::Configuration, or #{klass}"
       end
-
-      raise ArgumentError, "config must be nil, a Hash, PowoRuby::Configuration, or #{klass}"
     end
   end
 end
